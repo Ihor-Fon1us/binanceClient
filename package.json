@@ -1,0 +1,15 @@
+{
+  "name": "binanceclient",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "nodemon main.js"
+  },
+  "author": "Ihor Rakytin",
+  "license": "ISC",
+  "dependencies": {
+    "ccxws": "^0.47.0",
+    "redis": "^4.2.0"
+  }
+}
