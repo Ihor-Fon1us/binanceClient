@@ -4,12 +4,14 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "nodemon main.js"
+    "start": "node main.js",
+    "dev": "nodemon main.js"
   },
   "author": "Ihor Rakytin",
   "license": "ISC",
   "dependencies": {
     "ccxws": "^0.47.0",
+    "nodemon": "^1.4.1",
     "redis": "^4.2.0"
   }
 }

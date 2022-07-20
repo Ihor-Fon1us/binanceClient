@@ -6,9 +6,9 @@ class MainProcess {
     this.childs = [];
   }
   startChild(marketID) {
-    const child = fork('index.js');
+    const child = fork('index.js',[] ,{ killSignal: 'SIGINT' });
     child.on('error', (err) => {
-      // This will be called with err being an AbortError if the controller aborts
+      this.childs.splice(this.childs.indexOf(child), 1);
     });
     child.send({ market: marketID });
     this.childs.push(child);
@@ -16,8 +16,8 @@ class MainProcess {
   stopChild(marketID) {
     this.childs.forEach((child) => {
       if (child.pid === marketID) {
-        //this.childs.splice(child, 1);
-        child.kill();
+        child.send('exit');
+        this.childs.splice(this.childs.indexOf(child), 1);
       };
     });
   }
@@ -31,28 +31,7 @@ class MainProcess {
 }
 
 const main = new MainProcess();
-const market = {
-  BTCUSDT: {
-    id: "BTCUSDT",
-    base: "BTC",
-    quote: "USDT",
-  },
-  LTCUSDT: {
-    id: "LTCUSDT",
-    base: "LTC",
-    quote: "USDT",
-  },
-  ETHUSDT: {
-    id: "ETHUSDT",
-    base: "ETH",
-    quote: "USDT",
-  },
-  BNBUSDT: {
-    id: "BNBUSDT",
-    base: "BNB",
-    quote: "USDT",
-  }
-}
+
 const server = http.createServer( (req, res) => {
   if (req.url == '/') {
     res.writeHead(200, { 'Content-Type': 'text/html' });
@@ -60,21 +39,30 @@ const server = http.createServer( (req, res) => {
     res.end();
   }
   else if (req.url == "/start") {
-    res.writeHead(200, { 'Content-Type': 'text/html' });
-    main.startChild(market.BTCUSDT);
+    res.writeHead(200, { 'Content-Type': '' });
+    req.on('data', chunk => {
+      const marketID = JSON.parse(chunk);
+      main.startChild(marketID);
+    });
     res.end();
   }
   else if (req.url == "/stop") {
-    
+    res.writeHead(200, { 'Content-Type': 'text/html' });
+    req.on('data', chunk => {
+      const marketID = JSON.parse(chunk);
+      main.stopChild(marketID);
+    });
+    res.end(); 
   }
   else
-    res.writeHead(200, { 'Content-Type': 'text/html' });
-    main.stopChild(req.url.split('/')[1]);
-    res.end(); 
+    res.writeHead(404, { 'Content-Type': 'text/html' });
+    res.end();
   });
 
+
+
 const hostname = '127.0.0.1';
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 
 server.listen(port, hostname, () => {

@@ -3,19 +3,20 @@ const { createClient } = require('redis');
 
 class BinanceWorker {
   constructor(market) {
+    this.market = market;
     this.redisClient = createClient();
     this.redisClient.on('error', (err) => console.log('Redis Client Error', err));
     this.redisClient.connect();
     this.binanceClient = new BinanceClient();
-    this.binanceClient.subscribeLevel2Updates(market);
+    this.binanceClient.subscribeLevel2Updates(this.market);
     this.binanceClient.on('l2update', (data) => {
-        this.handler(data.asks, `${market.id}_asks`, () => {
+        this.handler(data.asks, `${this.market.id}_asks`, () => {
                 // some massage to main process
-                console.log(`${market.id} asks`);
+                console.log(`${this.market.id} asks`);
             });
-        this.handler(data.bids, `${market.id} bids`, () => {
+        this.handler(data.bids, `${this.market.id} bids`, () => {
                 // some massage to main process
-                console.log(`${market.id} bids`);
+                console.log(`${this.market.id} bids`);
             });
     });    
   }
@@ -43,6 +44,13 @@ class BinanceWorker {
     };
     return message();    
   }
+  stop() {
+    this.binanceClient.close(this.market);
+    this.redisClient.quit();
+  }
+  getName() {
+    return this.market.id;
+  }
 }
-
 module.exports = BinanceWorker;
+
